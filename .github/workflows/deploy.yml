@@ -87,16 +87,25 @@ jobs:
           # =========================================================
           # Usa rsync para:
           #   - Solo copiar archivos nuevos o modificados
-          #   - NO borrar archivos existentes en el servidor
+          #   - NO borrar archivos existentes en el servidor (por defecto)
           #   - Mantener permisos y timestamps
           # =========================================================
           script: |
-            /usr/bin/sshpass -p "$SSH_VM_PASS" rsync -avz --no-delete -e "ssh -o StrictHostKeyChecking=no" /tmp/deploy/ $SSH_VM_USER@192.168.1.21:/home/aziende/web/dev.aziende.us/public_html/
+            echo "📦 Verificando archivos en /tmp/deploy..."
+            ls -la /tmp/deploy/
+            echo ""
+            echo "🚀 Copiando archivos a la VM interna..."
+            /usr/bin/sshpass -p "$SSH_VM_PASS" rsync -avz -e "ssh -o StrictHostKeyChecking=no" /tmp/deploy/ $SSH_VM_USER@192.168.1.21:/home/aziende/web/dev.aziende.us/public_html/
+            echo ""
+            echo "✅ Verificando deploy en VM..."
             /usr/bin/sshpass -p "$SSH_VM_PASS" ssh -o StrictHostKeyChecking=no $SSH_VM_USER@192.168.1.21 << 'EOF'
               echo "✓ Deploy completado: $(date)"
               echo ""
               echo "📁 Archivos en public_html:"
               ls -la /home/aziende/web/dev.aziende.us/public_html/
+              echo ""
+              echo "📁 Archivos en assets/:"
+              ls -la /home/aziende/web/dev.aziende.us/public_html/assets/ | head -20
               echo ""
               echo "📁 Archivos en editor/:"
               ls -la /home/aziende/web/dev.aziende.us/public_html/editor/ 2>/dev/null || echo "  (carpeta editor no existe)"
