@@ -13,7 +13,10 @@
       "Bash(del \"e:\\\\skote\\\\Skote_React_4.3.0\\\\Skote_Vite_v4.3.0\\\\Aziende\\\\Starterkit - ts\\\\src\\\\modules\\\\RRHH\\\\AUTHORIZATION_SYSTEM.md\")",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(dir /O-D:*)",
+      "Bash(git ls-files:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
