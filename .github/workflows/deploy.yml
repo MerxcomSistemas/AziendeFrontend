@@ -92,24 +92,21 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           envs: SSH_VM_PASS,SSH_VM_USER
           # =========================================================
-          # SCRIPT: Copiar archivos a la VM interna
+          # SCRIPT: Copiar archivos a la VM interna (solo reemplaza)
           # =========================================================
-          # PASO 6A: sshpass + scp → Copiar archivos construidos a la VM
-          #   - sshpass: envía contraseña automáticamente
-          #   - scp -r: copia recursiva de archivos
-          #   - /tmp/deploy/* → origen (servidor principal)
-          #   - usuario@ip:/ruta → destino (VM)
-          #
-          # PASO 6B: sshpass + ssh + heredoc → Verificar deploy
-          #   - Conecta a la VM y ejecuta comandos
-          #   - Muestra fecha y lista archivos
-          #
-          # PASO 6C: rm -rf → Limpia archivos temporales
+          # Usa rsync para:
+          #   - Solo copiar archivos nuevos o modificados
+          #   - NO borrar archivos existentes en el servidor (.htaccess, etc.)
+          #   - Mantener permisos y timestamps
           # =========================================================
           script: |
-            /usr/bin/sshpass -p "$SSH_VM_PASS" scp -o StrictHostKeyChecking=no -r /tmp/deploy/* $SSH_VM_USER@192.168.1.21:/home/aziende/web/dev.aziende.us/public_html/
+            /usr/bin/sshpass -p "$SSH_VM_PASS" rsync -avz --no-delete -e "ssh -o StrictHostKeyChecking=no" /tmp/deploy/ $SSH_VM_USER@192.168.1.21:/home/aziende/web/dev.aziende.us/public_html/
             /usr/bin/sshpass -p "$SSH_VM_PASS" ssh -o StrictHostKeyChecking=no $SSH_VM_USER@192.168.1.21 << 'EOF'
               echo "✓ Deploy completado: $(date)"
+              echo "📁 Archivos en public_html:"
               ls -la /home/aziende/web/dev.aziende.us/public_html/
+              echo ""
+              echo "📁 Archivos en editor/:"
+              ls -la /home/aziende/web/dev.aziende.us/public_html/editor/ 2>/dev/null || echo "  (carpeta editor no existe)"
             EOF
             rm -rf /tmp/deploy
