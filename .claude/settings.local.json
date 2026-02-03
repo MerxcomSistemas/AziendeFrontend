@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(xargs:*)",
+      "Bash(copy:*)",
+      "Bash(cat:*)",
+      "Bash(dir \"E:\\\\AziendeModules\\\\AziendePlatform\\\\src\"\")",
+      "Bash(dir:*)",
+      "Bash(grep:*)",
+      "Bash(npm view:*)",
+      "Bash(ls:*)",
+      "Bash(del \"e:\\\\skote\\\\Skote_React_4.3.0\\\\Skote_Vite_v4.3.0\\\\Aziende\\\\Starterkit - ts\\\\src\\\\modules\\\\RRHH\\\\AUTHORIZATION_SYSTEM.md\")",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(test:*)"
+    ]
+  }
+}
