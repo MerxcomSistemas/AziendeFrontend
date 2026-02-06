@@ -84,16 +84,16 @@ async function main() {
     log("BUILD", colors.green, "Host copied to dist/");
   }
 
-  // Step 4: Copy Editor build to output/editor (if exists)
+  // Step 4: Copy Editor build to output/designset (if exists)
   if (editorExists) {
-    log("BUILD", colors.yellow, "Copying Editor build to output/editor...");
-    const editorDistPath = join(EDITOR_PATH, "dist");
-    const editorOutputPath = join(OUTPUT_PATH, "editor");
+    log("BUILD", colors.yellow, "Copying Editor build to output/designset...");
+    const editorDistPath = join(EDITOR_PATH, "designset");
+    const editorOutputPath = join(OUTPUT_PATH, "designset");
 
     if (existsSync(editorDistPath)) {
       mkdirSync(editorOutputPath, { recursive: true });
       cpSync(editorDistPath, editorOutputPath, { recursive: true });
-      log("BUILD", colors.green, "Editor copied to dist/editor/");
+      log("BUILD", colors.green, "Editor copied to dist/designset/");
     }
   }
 
@@ -108,7 +108,7 @@ async function main() {
   log("INFO", colors.cyan, "  ├── index.html      (Host)");
   log("INFO", colors.cyan, "  ├── assets/         (Host assets)");
   if (editorExists) {
-    log("INFO", colors.cyan, "  └── editor/         (Editor app)");
+    log("INFO", colors.cyan, "  └── designset/      (Editor/Viewer app)");
     log("INFO", colors.cyan, "      ├── index.html");
     log("INFO", colors.cyan, "      └── assets/");
   }
