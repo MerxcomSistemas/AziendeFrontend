@@ -8,28 +8,30 @@
 #   /designset/template_editor/* → Template Editor microservicio
 # =============================================================================
 
-# Habilitar el motor de reescritura
-RewriteEngine On
-RewriteBase /
+<IfModule mod_rewrite.c>
+    # Habilitar el motor de reescritura
+    RewriteEngine On
+    RewriteBase /
 
-# -----------------------------------------------------------------------------
-# REGLA 1: Si es un archivo o directorio real, servirlo directamente
-# -----------------------------------------------------------------------------
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+    # -------------------------------------------------------------------------
+    # REGLA 1: Si es un archivo o directorio real, servirlo directamente
+    # -------------------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
 
-# -----------------------------------------------------------------------------
-# REGLA 2: Rutas de /designset/* → /designset/index.html
-# (editor, viewer, template_editor, preview)
-# -----------------------------------------------------------------------------
-RewriteCond %{REQUEST_URI} ^/designset
-RewriteRule ^ /designset/index.html [L]
+    # -------------------------------------------------------------------------
+    # REGLA 2: Rutas de /designset/* → /designset/index.html
+    # (editor, viewer, template_editor, preview)
+    # -------------------------------------------------------------------------
+    RewriteCond %{REQUEST_URI} ^/designset
+    RewriteRule ^ /designset/index.html [L]
 
-# -----------------------------------------------------------------------------
-# REGLA 3: Todas las demás rutas (Host) → /index.html
-# -----------------------------------------------------------------------------
-RewriteRule ^ /index.html [L]
+    # -------------------------------------------------------------------------
+    # REGLA 3: Todas las demás rutas (Host) → /index.html
+    # -------------------------------------------------------------------------
+    RewriteRule ^ /index.html [L]
+</IfModule>
 
 # =============================================================================
 # Configuraciones adicionales
