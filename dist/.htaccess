@@ -2,9 +2,10 @@
 # .htaccess para SPA (Single Page Application) con microservicios
 # =============================================================================
 # Estructura:
-#   /                    → Host (Starterkit)
-#   /editor/*            → Editor microservicio
-#   /template_editor/*   → Redirige a /editor/*
+#   /                        → Host (Starterkit)
+#   /designset/editor/*      → Editor microservicio
+#   /designset/viewer/*      → Viewer microservicio
+#   /designset/template_editor/* → Template Editor microservicio
 # =============================================================================
 
 # Habilitar el motor de reescritura
@@ -12,25 +13,21 @@ RewriteEngine On
 RewriteBase /
 
 # -----------------------------------------------------------------------------
-# REGLA 1: Redirigir /template_editor/* a /editor/*
-# -----------------------------------------------------------------------------
-RewriteRule ^template_editor(/.*)?$ /editor$1 [L,R=301]
-
-# -----------------------------------------------------------------------------
-# REGLA 2: Si es un archivo o directorio real, servirlo directamente
+# REGLA 1: Si es un archivo o directorio real, servirlo directamente
 # -----------------------------------------------------------------------------
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # -----------------------------------------------------------------------------
-# REGLA 3: Rutas del Editor → /editor/index.html
+# REGLA 2: Rutas de /designset/* → /designset/index.html
+# (editor, viewer, template_editor, preview)
 # -----------------------------------------------------------------------------
-RewriteCond %{REQUEST_URI} ^/editor
-RewriteRule ^ /editor/index.html [L]
+RewriteCond %{REQUEST_URI} ^/designset
+RewriteRule ^ /designset/index.html [L]
 
 # -----------------------------------------------------------------------------
-# REGLA 4: Todas las demás rutas (Host) → /index.html
+# REGLA 3: Todas las demás rutas (Host) → /index.html
 # -----------------------------------------------------------------------------
 RewriteRule ^ /index.html [L]
 
