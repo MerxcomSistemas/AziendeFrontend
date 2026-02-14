@@ -17,7 +17,8 @@
       "Bash(dir /O-D:*)",
       "Bash(git ls-files:*)",
       "Bash(npm run build:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(dir /s /b \"e:\\\\AziendeSkote\\\\AziendeFrontend\\\\Starterkit - ts\\\\public\")"
     ]
   }
 }
