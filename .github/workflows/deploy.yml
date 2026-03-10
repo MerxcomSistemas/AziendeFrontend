@@ -25,7 +25,7 @@ name: Deploy a servidor
 
 on:
   push:
-    branches: [ "main" ]  # Se ejecuta en push a main
+    branches: [ "feature" ]  # Se ejecuta en push a main
   workflow_dispatch:       # Permite ejecución manual
 
 jobs:
