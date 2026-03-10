@@ -8,12 +8,32 @@
 
   <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
   <link href='https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css' rel='stylesheet'>
+
+  <!-- Prevent FOUC with early theme application -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme-settings");
+        if (stored) {
+          var s = JSON.parse(stored);
+          if (s.colorPalette && s.colorPalette !== "aziende") {
+            document.documentElement.setAttribute("data-color-palette", s.colorPalette);
+            if (s.colorPalette === "custom") {
+              var p = s.customPrimaryColor || "#556ee6";
+              document.documentElement.style.setProperty("--custom-primary", p);
+            }
+          }
+        }
+      } catch (e) { }
+    })();
+  </script>
+
   <title>Skote Vite React Admin & Dashboard Template</title>
   <script>
     var global = global || window;
   </script>
-  <script type="module" crossorigin src="/assets/index-BcQbLZbS.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-D696KxKn.css">
+  <script type="module" crossorigin src="/assets/index-CncDWGDY.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-C_t8nt7q.css">
 </head>
 
 <body>
