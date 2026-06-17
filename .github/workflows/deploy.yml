@@ -1,113 +1,79 @@
-# =============================================================================
-# WORKFLOW: Deploy carpeta dist/ a servidor
-# =============================================================================
-# Este workflow despliega la carpeta dist/ (ya construida) a una VM interna.
-#
-# Arquitectura de conexión:
-#   GitHub Actions → Servidor Principal (SSH_HOST) → VM (192.168.1.21)
-#
-# Flujo:
-#   1. Checkout del repositorio
-#   2. Verificar que existe la carpeta dist/
-#   3. Copiar archivos de dist/ al servidor principal via SCP
-#   4. Desde el servidor principal, copiar a la VM interna
-#
-# IMPORTANTE: Debes hacer npm run build localmente y subir la carpeta dist/
-#
-# Secrets requeridos:
-#   - SSH_HOST: IP o dominio del servidor principal
-#   - SSH_PORT: Puerto SSH (normalmente 22)
-#   - SSH_USER: Usuario para conectarse
-#   - SSH_PASSWORD: Contraseña del usuario
-# =============================================================================
-
-name: Deploy a servidor
+name: Deploy Frontend to LXC
 
 on:
   push:
-    branches: [ "feature" ]  # Se ejecuta en push a main
-  workflow_dispatch:       # Permite ejecución manual
+    branches:
+      - merx
+
+env:
+  BASTION_HOST: ${{ secrets.BASTION_HOST }}
+  BASTION_PORT: ${{ secrets.BASTION_PORT }}
+  BASTION_USER: ${{ secrets.BASTION_USER }}
+
+  INTERNAL_HOST: ${{ secrets.INTERNAL_HOST }}
+  INTERNAL_PORT: ${{ secrets.INTERNAL_PORT }}
+  INTERNAL_USER: ${{ secrets.INTERNAL_USER }}
+
+  # /var/www/html/pruebas/
+  REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
+  LOCAL_TUNNEL_PORT: 2022
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    environment: ${{ github.ref_name }}
     steps:
-      # Paso 1: Descargar el código del repositorio
-      - name: Checkout del repositorio
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Paso 2: Verificar secrets configurados
-      - name: Verificar secrets
-        run: |
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then echo "❌ SSH_HOST no configurado"; else echo "✓ SSH_HOST configurado"; fi
-          if [ -z "${{ secrets.SSH_PORT }}" ]; then echo "❌ SSH_PORT no configurado"; else echo "✓ SSH_PORT configurado"; fi
-          if [ -z "${{ secrets.SSH_USER }}" ]; then echo "❌ SSH_USER no configurado"; else echo "✓ SSH_USER configurado"; fi
-          if [ -z "${{ secrets.SSH_PASSWORD }}" ]; then echo "❌ SSH_PASSWORD no configurado"; else echo "✓ SSH_PASSWORD configurado"; fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-      # Paso 3: Verificar que existe la carpeta dist/
-      - name: Verificar carpeta dist/
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build React app
+        env:
+          CI: false
+        run: npm run build
+
+      - name: Instalar sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+      - name: Abrir túnel SSH al contenedor vía bastion
+        env:
+          SSHPASS: ${{ secrets.BASTION_PASSWORD }}
         run: |
-          if [ -d "dist" ]; then
-            echo "✓ Carpeta dist/ encontrada"
-            echo "📁 Contenido:"
-            ls -la dist/
+          setsid sshpass -e ssh -N -v \
+            -p "$BASTION_PORT" \
+            -L "$LOCAL_TUNNEL_PORT:$INTERNAL_HOST:$INTERNAL_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            -o ExitOnForwardFailure=yes \
+            -o ServerAliveInterval=30 \
+            "$BASTION_USER@$BASTION_HOST" > tunnel.log 2>&1 &
+
+          if timeout 15 bash -c "until nc -z localhost $LOCAL_TUNNEL_PORT; do sleep 0.2; done"; then
+            echo "Tunel accesible en localhost:$LOCAL_TUNNEL_PORT"
           else
-            echo "❌ ERROR: La carpeta dist/ no existe"
-            echo "Por favor, ejecuta 'npm run build' localmente y sube la carpeta dist/ al repositorio"
+            echo "ERROR: el tunel no quedo accesible en localhost:$LOCAL_TUNNEL_PORT"
+            echo "----- LOG DEL TUNEL SSH -----"
+            cat tunnel.log
+            echo "-----------------------------"
             exit 1
           fi
 
-      # Paso 4: Copiar archivos de dist/ al servidor principal
-      - name: Copiar archivos al servidor principal
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: "dist/*"
-          target: "/tmp/deploy"
-          strip_components: 1
-
-      # Paso 5: Copiar desde servidor principal a la VM interna
-      - name: Copiar archivos a la VM interna
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Copiar build/ al servidor (rsync vía túnel)
         env:
-          SSH_VM_PASS: ${{ secrets.SSH_PASSWORD }}
-          SSH_VM_USER: ${{ secrets.SSH_USER }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          envs: SSH_VM_PASS,SSH_VM_USER
-          # =========================================================
-          # SCRIPT: Copiar archivos a la VM interna (solo reemplaza)
-          # =========================================================
-          # Usa rsync para:
-          #   - Solo copiar archivos nuevos o modificados
-          #   - NO borrar archivos existentes en el servidor (por defecto)
-          #   - Mantener permisos y timestamps
-          # =========================================================
-          script: |
-            echo "📦 Verificando archivos en /tmp/deploy..."
-            ls -la /tmp/deploy/
-            echo ""
-            echo "🚀 Copiando archivos a la VM interna..."
-            /usr/bin/sshpass -p "$SSH_VM_PASS" rsync -avz -e "ssh -o StrictHostKeyChecking=no" /tmp/deploy/ $SSH_VM_USER@192.168.1.21:/home/aziende/web/dev.aziende.us/public_html/
-            echo ""
-            echo "✅ Verificando deploy en VM..."
-            /usr/bin/sshpass -p "$SSH_VM_PASS" ssh -o StrictHostKeyChecking=no $SSH_VM_USER@192.168.1.21 << 'EOF'
-              echo "✓ Deploy completado: $(date)"
-              echo ""
-              echo "📁 Archivos en public_html:"
-              ls -la /home/aziende/web/dev.aziende.us/public_html/
-              echo ""
-              echo "📁 Archivos en assets/:"
-              ls -la /home/aziende/web/dev.aziende.us/public_html/assets/ | head -20
-              echo ""
-              echo "📁 Archivos en editor/:"
-              ls -la /home/aziende/web/dev.aziende.us/public_html/editor/ 2>/dev/null || echo "  (carpeta editor no existe)"
-            EOF
-            rm -rf /tmp/deploy
+          SSHPASS: ${{ secrets.INTERNAL_PASSWORD }}
+        run: |
+          sshpass -e rsync -rlzvc --delete \
+            --no-perms --no-owner --no-group --no-times --omit-dir-times \
+            -e "ssh -p $LOCAL_TUNNEL_PORT -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null" \
+            ./build/ "$INTERNAL_USER@localhost:$REMOTE_PATH"
+
+      - name: Cerrar túnel SSH
+        if: always()
+        run: |
+          pkill -f "$LOCAL_TUNNEL_PORT:$INTERNAL_HOST:$INTERNAL_PORT" || true
